@@ -1,0 +1,179 @@
+config:
+  backend:
+    name: Semantic DICOM
+    slug: default
+    sortKey: 1
+    baseUrl: http://localhost:${QLEVER_PORT}
+    apiToken: ''
+    isDefault: true
+    isNoSlugMode: 'False'
+    maxDefault: '100'
+    filteredLanguage: en
+    dynamicSuggestions: '2'
+    defaultModeTimeout: '5.0'
+    mixedModeTimeout: '1.0'
+    suggestSubjects: |-
+      %PREFIXES%
+      SELECT ?qui_entity ?qui_name ?qui_alias ?qui_count WHERE {
+        { SELECT ?qui_entity (COUNT(?object) AS ?qui_count) WHERE { ?qui_entity ?qui_predicate ?qui_object } GROUP BY ?qui_entity }
+        ?qui_entity rdfs:label ?qui_name .
+        BIND (?qui_name AS ?qui_alias)
+        FILTER REGEX(STR(?qui_name), "^%CURRENT_WORD%")
+      } ORDER BY DESC(?qui_count)
+    suggestPredicates: |-
+      %PREFIXES%
+      SELECT ?qui_entity ?qui_name ?qui_alias ?qui_count ?qui_reversed WHERE {
+        # IF !CURRENT_SUBJECT_VARIABLE #
+        { { SELECT ?qui_entity (COUNT(?qui_object) AS ?qui_count)
+          WHERE { %CURRENT_SUBJECT% ?qui_entity ?qui_object  }
+          GROUP BY ?qui_entity } BIND (0 AS ?qui_reversed) }
+        UNION
+        { { SELECT ?qui_entity (COUNT(?qui_subject) AS ?qui_count)
+          WHERE { ?qui_subject ?qui_entity %CURRENT_SUBJECT%  }
+          GROUP BY ?qui_entity } BIND (1 AS ?qui_reversed) }
+        # ENDIF #
+        # IF CURRENT_SUBJECT_VARIABLE AND CONNECTED_TRIPLES_EMPTY #
+        { SELECT ?qui_entity (COUNT(?qui_entity) AS ?qui_count)
+          WHERE { ?qui_subject ?qui_entity ?qui_object }
+          GROUP BY ?qui_entity } BIND (0 AS ?qui_reversed)
+        # ENDIF #
+        # IF CURRENT_SUBJECT_VARIABLE AND !CONNECTED_TRIPLES_EMPTY #
+        { SELECT ?qui_entity (COUNT(DISTINCT %CURRENT_SUBJECT%) AS ?qui_count)
+          WHERE { %CONNECTED_TRIPLES% %CURRENT_SUBJECT% ?qui_entity ?qui_object }
+          GROUP BY ?qui_entity } BIND (0 AS ?qui_reversed)
+        # ENDIF #
+        OPTIONAL { ?qui_entity rdfs:label ?qui_alias }
+        BIND (COALESCE(?qui_alias, ?qui_entity) AS ?qui_name)
+        # IF !CURRENT_WORD_EMPTY #
+        FILTER (REGEX(STR(?qui_name), "%CURRENT_WORD%", "i") || REGEX(STR(?qui_entity), "%CURRENT_WORD%", "i"))
+        # ENDIF #
+      } ORDER BY DESC(?qui_count)
+    suggestObjects: |-
+      %PREFIXES%
+      # IF CURRENT_WORD_EMPTY #
+      SELECT ?qui_entity ?qui_name ?qui_alias ?qui_count WHERE {
+        { SELECT ?qui_entity (COUNT(?qui_entity) AS ?qui_count) WHERE {
+          %CONNECTED_TRIPLES% %CURRENT_SUBJECT% %CURRENT_PREDICATE% ?qui_entity .
+        } GROUP BY ?qui_entity }
+        OPTIONAL { ?qui_entity rdfs:label ?qui_alias }
+        BIND (COALESCE(?qui_alias, ?qui_entity) AS ?qui_name)
+      } ORDER BY DESC(?qui_count)
+      # ELSE #
+      SELECT ?qui_entity ?qui_name ?qui_alias ?qui_count WHERE {
+        { SELECT ?qui_entity (COUNT(?qui_entity) AS ?qui_count) WHERE {
+          %CONNECTED_TRIPLES% %CURRENT_SUBJECT% %CURRENT_PREDICATE% ?qui_entity .
+        } GROUP BY ?qui_entity }
+        OPTIONAL { ?qui_entity rdfs:label ?qui_alias }
+        BIND (COALESCE(?qui_alias, ?qui_entity) AS ?qui_name)
+        FILTER (REGEX(STR(?qui_name), "^%CURRENT_WORD%") || REGEX(STR(?qui_alias), "^%CURRENT_WORD%"))
+      } ORDER BY DESC(?qui_count)
+      # ENDIF #
+    subjectName: ?qleverui_entity <http://www.w3.org/2000/01/rdf-schema#label> ?qleverui_name
+    alternativeSubjectName: ''
+    predicateName: ?qleverui_entity <http://www.w3.org/2000/01/rdf-schema#label> ?qleverui_name
+    alternativePredicateName: ''
+    objectName: ?qleverui_entity <http://www.w3.org/2000/01/rdf-schema#label> ?qleverui_name
+    alternativeObjectName: ''
+    replacePredicates: ''
+    supportedKeywords: as,ask,base,bind,by,construct,contains-entity,contains-word,data,delete,describe,distinct,filter,from,graph,group,has-predicate,having,insert,internal,keywords,limit,minus,named,not,offset,optional,optional,order,prefix,select,service,sort,textlimit,union,using,values,where,with
+    supportedFunctions: asc, desc, avg, values, score, text, count, sample, min, max, average, concat, group_concat, langMatches, lang, regex, sum, dist, contains, str, strlen, substr, strstarts, strends, strbefore, strafter, contains, year, month, day, rand, abs, ceil, floor, round, log, exp, sqrt, sin, cos, tan, if, coalesce, bound, concat, replace, encode_for_uri, isiri, isblank, isliteral, isNumeric, bound
+    supportedPredicateSuggestions: ''
+    suggestPrefixnamesForPredicates: 'True'
+    fillPrefixes: 'True'
+    filterEntities: 'False'
+    suggestionEntityVariable: ?qui_entity
+    suggestionNameVariable: ?qui_name
+    suggestionAltNameVariable: ?qui_alias
+    suggestionReversedVariable: ?qui_reversed
+    frequentPredicates: ''
+    frequentPatternsWithoutOrder: ''
+    entityNameAndAliasPattern: BIND(?qui_entity AS ?name) BIND(?qui_entity AS ?alias)
+    entityScorePattern: '{ SELECT ?qui_entity (COUNT(?qui_tmp) AS ?count) WHERE { ?qui_entity ql:has-predicate ?qui_tmp } GROUP BY ?qui_entity }'
+    predicateNameAndAliasPatternWithoutContext: BIND(?qui_entity AS ?name) BIND(?qui_entity AS ?alias)
+    predicateNameAndAliasPatternWithContext: BIND(?qui_entity AS ?name) BIND(?qui_entity AS ?alias)
+    entityNameAndAliasPatternDefault: BIND(?qui_entity AS ?name) BIND(?qui_entity AS ?alias)
+    predicateNameAndAliasPatternWithoutContextDefault: BIND(?qui_entity AS ?name) BIND(?qui_entity AS ?alias)
+    predicateNameAndAliasPatternWithContextDefault: BIND(?qui_entity AS ?name) BIND(?qui_entity AS ?alias)
+    warmupQuery1: |-
+      SELECT ?qui_entity (SAMPLE(?name) AS ?qui_name) (SAMPLE(?alias) AS ?qui_alias) (SAMPLE(?count) AS ?qui_count) WHERE {
+        { SELECT ?qui_entity ?name ?alias ?count WHERE {
+          %ENTITY_SCORE_PATTERN%
+          %ENTITY_NAME_AND_ALIAS_PATTERN% }
+        ORDER BY ?qui_entity }
+      } GROUP BY ?qui_entity ORDER BY DESC(?qui_count)
+    warmupQuery2: |-
+      SELECT ?qui_entity ?name ?alias ?count WHERE {
+        %ENTITY_SCORE_PATTERN%
+        %ENTITY_NAME_AND_ALIAS_PATTERN%
+      } ORDER BY ?alias
+    warmupQuery3: |-
+      SELECT ?qui_entity ?name ?alias ?count WHERE {
+        %ENTITY_SCORE_PATTERN%
+        %ENTITY_NAME_AND_ALIAS_PATTERN%
+      } ORDER BY ?qui_entity
+    warmupQuery4: |-
+      SELECT ?qui_entity ?name ?alias ?count_1 WHERE {
+        { { SELECT ?qui_entity (COUNT(?qui_entity) AS ?count_1) WHERE { ?x ql:has-predicate ?qui_entity } GROUP BY ?qui_entity }
+          %PREDICATE_NAME_AND_ALIAS_PATTERN_WITHOUT_CONTEXT% .
+          FILTER (?qui_entity != <QLever-internal-function/langtag>)
+        } UNION {
+          { SELECT ?qui_entity (COUNT(?qui_entity) AS ?count_1) WHERE { ?x ql:has-predicate ?qui_entity } GROUP BY ?qui_entity }
+          %PREDICATE_NAME_AND_ALIAS_PATTERN_WITHOUT_CONTEXT_DEFAULT% .
+          FILTER (?qui_entity != <QLever-internal-function/langtag>)
+        } }
+    warmupQuery5: |-
+      SELECT ?qui_entity ?name ?alias ?count_1 WHERE {
+        { { SELECT ?qui_entity (COUNT(?qui_entity) AS ?count_1) WHERE { ?x ql:has-predicate ?qui_entity } GROUP BY ?qui_entity }
+          %PREDICATE_NAME_AND_ALIAS_PATTERN_WITH_CONTEXT% .
+          FILTER (?qui_entity != <QLever-internal-function/langtag>)
+        } UNION {
+          { SELECT ?qui_entity (COUNT(?qui_entity) AS ?count_1) WHERE { ?x ql:has-predicate ?qui_entity } GROUP BY ?qui_entity }
+          %PREDICATE_NAME_AND_ALIAS_PATTERN_WITH_CONTEXT_DEFAULT% .
+          FILTER (?qui_entity != <QLever-internal-function/langtag>)
+        } }
+    suggestSubjectsContextInsensitive: |-
+      %PREFIXES%
+      # IF CURRENT_WORD_EMPTY #
+
+      %WARMUP_QUERY_1%
+
+      # ELSE #
+
+      SELECT ?qui_entity (SAMPLE(?name) AS ?qui_name) (SAMPLE(?alias) AS ?qui_alias) (SAMPLE(?count) AS ?qui_count) WHERE {
+        { %WARMUP_QUERY_2% }
+        # IF !CURRENT_WORD_EMPTY #
+        FILTER (REGEX(?alias, "^\"%CURRENT_WORD%") || REGEX(?alias, "^<%CURRENT_WORD%"))
+        # ENDIF #
+      } GROUP BY ?qui_entity ORDER BY DESC(?qui_count)
+
+      # ENDIF #
+    suggestPredicatesContextInsensitive: |-
+      %PREFIXES%
+
+      SELECT ?qui_entity
+                    (MIN(?name) as ?qui_name)
+                    (MIN(?alias) as ?qui_alias)
+                    (SAMPLE(?count_1) as ?qui_count) WHERE {
+        { %WARMUP_QUERY_4% }
+        # IF !CURRENT_WORD_EMPTY #
+        FILTER REGEX(?alias, "%CURRENT_WORD%", "i")
+        # ENDIF #
+      } GROUP BY ?qui_entity ORDER BY DESC(?qui_count)
+    suggestObjectsContextInsensitive: |-
+      %PREFIXES%
+      # IF CURRENT_WORD_EMPTY #
+
+      %WARMUP_QUERY_1%
+
+      # ELSE #
+
+      SELECT ?qui_entity (SAMPLE(?name) AS ?qui_name) (SAMPLE(?alias) AS ?qui_alias) (SAMPLE(?count) AS ?qui_count) WHERE {
+        { %WARMUP_QUERY_2% }
+        # IF !CURRENT_WORD_EMPTY #
+        FILTER (REGEX(?alias, "^\"%CURRENT_WORD%") || REGEX(?alias, "^<%CURRENT_WORD%"))
+        # ENDIF #
+      } GROUP BY ?qui_entity ORDER BY DESC(?qui_count)
+
+      # ENDIF #
+    mapViewBaseURL: ''
+  examples: []

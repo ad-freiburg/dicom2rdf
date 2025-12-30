@@ -1,0 +1,48 @@
+services:
+  build-raw-index:
+    depends_on:
+      convert:
+        condition: service_completed_successfully
+
+  construct:
+    depends_on:
+      build-raw-index:
+        condition: service_completed_successfully
+
+  build-semantic-index:
+    depends_on:
+      construct:
+        condition: service_completed_successfully
+
+  qlever:
+    depends_on:
+      build-semantic-index:
+        condition: service_completed_successfully
+
+  qlever-ui:
+    depends_on:
+      qlever:
+        condition: service_healthy
+
+  ready-message:
+    image: alpine:3
+    depends_on:
+      qlever-ui:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - |
+        echo ""
+        echo "╔═══════════════════════════════════════════════════════════════╗"
+        echo "║                                                               ║"
+        echo "║   ✓ All services started successfully!                        ║"
+        echo "║                                                               ║"
+        echo "║   QLever UI                                                   ║"
+        echo "║   → http://localhost:${QLEVER_UI_PORT}                                     ║"
+        echo "║                                                               ║"
+        echo "║   QLever SPARQL endpoint                                      ║"
+        echo "║   → http://localhost:${QLEVER_PORT}                                     ║"
+        echo "║                                                               ║"
+        echo "╚═══════════════════════════════════════════════════════════════╝"
+        echo ""

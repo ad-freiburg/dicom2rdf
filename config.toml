@@ -1,0 +1,155 @@
+forbidden_code_meanings = [
+    "BACKGROUNDMASK",
+    "BITMASK",
+    "IMPLANT_BITMASK",
+    "Image Reference",
+    "Original Scan Protocol",
+    "Performed Scan Protocol",
+    "SKINLINE",
+]
+
+forbidden_dicom_tags = [
+    [0x0017, 0x105C],
+    [0x0019, 0x10A0],
+    [0x0029, 0x1011],
+    [0x0087, 0x1020],
+    [0x01F7, 0x1081],
+    [0x6005, 0x1010],
+    [0x6005, 0x1030],
+]
+
+[fallback]
+iri = "https://example.com/unknown/"
+prefix = "unk"
+
+[[dicom]]
+iri = "https://example.com/unknown/AGFA4ISOFT_"
+prefix = "agfa4isoft"
+coding_scheme = "AGFA4ISOFT_"
+
+[[dicom]]
+iri = "https://example.com/unknown/AGFAHC_"
+prefix = "agfahc"
+coding_scheme = "AGFAHC_"
+
+[[dicom]]
+iri = "https://example.com/unknown/99SMS_CTMR_"
+prefix = "ctmr"
+coding_scheme = "99SMS_CTMR_"
+
+[[dicom]]
+iri = "https://dicom.nema.org/resources/ontology/DCM/"
+prefix = "dcm"
+coding_scheme = "DCM"
+
+[[dicom]]
+iri = "https://example.com/unknown/99GAP_"
+prefix = "gap"
+coding_scheme = "99GAP_"
+
+[[dicom]]
+iri = "https://example.com/unknown/GAPIT_"
+prefix = "gapit"
+coding_scheme = "GAPIT_"
+
+[[dicom]]
+iri = "https://example.com/unknown/GEK_"
+prefix = "gek"
+coding_scheme = "GEK_"
+
+[[dicom]]
+iri = "https://uniklinik-freiburg.de/rdf/hologic/"
+prefix = "holx"
+coding_scheme = "99HOLX"
+
+[[dicom]]
+iri = "https://uniklinik-freiburg.de/rdf/iblab/"
+prefix = "ibl"
+coding_scheme = "99IBL"
+
+[[dicom]]
+iri = "https://example.com/unknown/ISO639_2_"
+prefix = "iso639"
+coding_scheme = "ISO639_2_"
+
+[[dicom]]
+iri = "https://bioportal.bioontology.org/ontologies/LOINC/"
+prefix = "ln"
+coding_scheme = "LN"
+
+[[dicom]]
+iri = "https://example.com/unknown/99PMSBLUS_"
+prefix = "pmsblus"
+coding_scheme = "99PMSBLUS_"
+
+[[dicom]]
+iri = "https://radlex.org/RID/"
+prefix = "radlex"
+coding_scheme = "RADLEX"
+
+[[dicom]]
+iri = "https://purl.bioontology.org/ontology/SNOMEDCT/"
+prefix = "sct"
+coding_scheme = "SCT"
+
+[[dicom]]
+iri = "https://example.com/unknown/SNM3_"
+prefix = "snm3"
+coding_scheme = "SNM3_"
+
+[[dicom]]
+iri = "https://example.com/unknown/SRT_"
+prefix = "srt"
+coding_scheme = "SRT_"
+
+[[dicom]]
+iri = "https://example.com/unknown/99TOSHIBA-TMSC_"
+prefix = "tmsc"
+coding_scheme = "99TOSHIBA-TMSC_"
+
+[[dicom]]
+iri = "https://units-of-measurement.org/"
+prefix = "ucum"
+coding_scheme = "UCUM"
+
+[[dicom]]
+iri = "https://example.com/unknown/99CT_VIA_"
+prefix = "via"
+coding_scheme = "99CT_VIA_"
+
+[[dicom]]
+iri = "https://example.com/unknown/99PHI-IXR-XPER_"
+prefix = "xper"
+coding_scheme = "99PHI-IXR-XPER_"
+
+[[non_dicom]]
+iri = "http://dicom2rdf.uniklinik-freiburg.de/"
+prefix = "dicom2rdf"
+
+[[non_dicom]]
+iri = "http://qudt.org/schema/qudt/"
+prefix = "qudt"
+
+[[non_dicom]]
+iri = "http://uniklinik-freiburg.de/rdf/radiologie/"
+prefix = "rad"
+
+[[non_dicom]]
+iri = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+prefix = "rdf"
+
+[[non_dicom]]
+iri = "http://www.w3.org/2000/01/rdf-schema#"
+prefix = "rdfs"
+
+[[non_dicom]]
+iri = "https://schema.org/"
+prefix = "schema"
+
+[[non_dicom]]
+iri = "http://www.w3.org/2004/02/skos/core#"
+prefix = "skos"
+
+[[non_dicom]]
+iri = "http://www.w3.org/2001/XMLSchema#"
+prefix = "xsd"
