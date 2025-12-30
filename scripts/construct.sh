@@ -8,6 +8,7 @@ total=${#files[@]}
 for i in "${!files[@]}"; do
   file="${files[$i]}"
   name=$(basename "$file" .meta-data.json)
+  suffix="${name##*-}"
   QLEVER_NAME="$name" qlever start
   max_depth=$(
     curl -s -G "http://localhost:7055" \
@@ -17,7 +18,7 @@ for i in "${!files[@]}"; do
   echo -e "\033[1m[$((i+1))/${total}] Constructing semantic triples from '$name' (max depth: $max_depth)\033[0m"
   /app/construct \
     --config /app/config.toml \
-    --prefix "$name" --output /ttl \
+    --suffix "$suffix" --output /ttl \
     --max-depth "$max_depth"
   QLEVER_NAME="$name" qlever stop
 done

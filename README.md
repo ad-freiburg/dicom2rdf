@@ -17,26 +17,25 @@
 # Usage
 We use `docker` in the following examples, but `podman` works just as well.
 
-1.  Create a new directory and `cd` into it:
+1.  Clone this repository and `cd` into it:
     ```bash
-    mkdir ~/my-dicom2rdf-pipeline && cd ~/my-dicom2rdf-pipeline
+    git clone https://github.com/ad-freiburg/dicom2rdf.git ~/dicom2rdf && cd ~/dicom2rdf
     ```
 
-2.  Download the compose files:
+2.  Create empty bind mounts:
     ```bash
-    curl -O https://raw.githubusercontent.com/ad-freiburg/dicom2rdf/main/compose.yml
-    curl -O https://raw.githubusercontent.com/ad-freiburg/dicom2rdf/main/compose.pipeline.yml
+    mkdir -p data/{ttl-raw,ttl-semantic,index-raw,index-semantic}
     ```
 
 3.  Create an `.env` file from the example and adjust as needed:
     ```bash
-    curl -o .env https://raw.githubusercontent.com/ad-freiburg/dicom2rdf/main/.env.example
+    cp .env.example .env
     ```
 
 4.  Start the pipeline by providing both the base `compose.yml` as well as the
     `compose.pipeline.yml` to ensure correct execution order:
     ```bash
-    docker compose -f compose.yml -f compose.pipeline.yml up
+    docker compose -f compose.yml -f compose.pipeline.yml up --build
     ```
 
     1.  In the future, you may also start QLever and QLever UI without a full

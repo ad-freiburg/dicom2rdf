@@ -14,9 +14,9 @@ struct Args {
     #[arg(long, required = true)]
     config: PathBuf,
 
-    /// File name prefix
+    /// File name suffix
     #[arg(long, required = true)]
-    prefix: String,
+    suffix: String,
 
     /// Path to output directory
     #[arg(long, required = true)]
@@ -53,6 +53,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|q| q.name.len())
         .max()
         .expect("Expected at least one query");
+
+    let mut gz_encoder = GzEncoder::new(Vec::new(), Compression::default());
     for MkQueryResult { name, query } in queries {
         let result = client
             .post("http://localhost:7055/api/default")
@@ -65,13 +67,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .lines()
             .filter(|l| l.ends_with("."))
             .count();
-        let mut gz_encoder = GzEncoder::new(Vec::new(), Compression::default());
-        gz_encoder.write_all(&result)?;
-        let writer = gz_encoder.finish()?;
-        let filename = format!("{}.{}.ttl.gz", args.prefix, name);
-        let output_path = args.output.join(filename);
-        fs::write(&output_path, writer)?;
-        info!("{:>longest_query_name$}: {} triples", name, triple_count);
+        if triple_count > 0 {
+            gz_encoder.write_all(&result)?;
+            info!("{:>longest_query_name$}: {} triples", name, triple_count);
+        }
     }
+
+    let compressed = gz_encoder.finish()?;
+    let filename = format!("semantic-dicom-{}.ttl.gz", args.suffix);
+    let output_path = args.output.join(filename);
+    fs::write(&output_path, compressed)?;
     Ok(())
 }
