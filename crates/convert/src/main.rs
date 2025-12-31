@@ -15,7 +15,6 @@ use rayon::prelude::*;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::mpsc;
 
 fn dir_exists(s: &str) -> Result<PathBuf, String> {
     let path = PathBuf::from(s);
@@ -95,8 +94,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("\x1b[1mStarting conversion of DICOM SR to raw RDF Turtle\x1b[0m");
     let worker_id = AtomicUsize::new(0);
-    let (progress_tx, progress_rx) = mpsc::channel::<()>();
-    let progress_logger = mk_progress_logger(progress_rx);
+    let (progress_sender, progress_logger_thread) = mk_progress_logger();
 
     get_dcm_or_zst_paths(args.input_dir.as_path())
         .par_bridge()
@@ -110,18 +108,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ));
                 let error_writer =
                     mk_writer(&args.output_dir, &format!("{}-errors.log", worker_name));
-                let progress_tx = progress_tx.clone();
-                (triple_writer, error_writer, progress_tx)
+                (triple_writer, error_writer, progress_sender.clone())
             },
-            |(triple_writer, error_writer, progress_tx), path| {
+            |(triple_writer, error_writer, progress_sender), path| {
                 if let Err(e) = convert_file(triple_writer, error_writer, &path, &config) {
                     warn!("Failed to convert file {:?}: {}", path, e)
                 }
-                progress_tx.send(()).expect("Send failed");
+                progress_sender.tick();
             },
         );
-    drop(progress_tx);
-    progress_logger.join().expect("Thread panicked");
+    drop(progress_sender);
+    progress_logger_thread.join().expect("Thread panicked");
 
     Ok(())
 }
