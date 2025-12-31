@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
-shopt -s nullglob
 
+shopt -s nullglob
 files=(/ttl/*.ttl.gz)
+shopt -u nullglob
+
 total=${#files[@]}
 
 for i in "${!files[@]}"; do

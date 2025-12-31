@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-shopt -s nullglob
 
 ATTRIBUTES_JSON_ENDPOINT="https://raw.githubusercontent.com/innolitics/dicom-standard/refs/heads/master/standard/attributes.json"
 NOW="$(date -Iseconds)"

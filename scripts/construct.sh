@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
-shopt -s nullglob
 
+shopt -s nullglob
 files=(/data/*.meta-data.json)
+shopt -u nullglob
+
 total=${#files[@]}
 
 for i in "${!files[@]}"; do
@@ -23,6 +25,9 @@ for i in "${!files[@]}"; do
   QLEVER_NAME="$name" qlever stop
 done
 
-for f in /ttl-static/*.ttl; do
-  gzip -c "$f" >/ttl/$(basename "$f").gz
-done
+(
+  shopt -s nullglob
+  for f in /ttl-static/*.ttl; do
+    gzip -c "$f" >/ttl/$(basename "$f").gz
+  done
+)

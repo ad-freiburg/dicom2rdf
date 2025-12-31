@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-shopt -s nullglob
 
 NOW="$(date -Iseconds)"
 STANDARD_SOP_CLASSES_ENDPOINT="https://dicom.nema.org/dicom/2013/output/chtml/part04/sect_B.5.html"

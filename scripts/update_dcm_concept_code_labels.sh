@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-shopt -s nullglob
 
 DCM_OWL_ENDPOINT="ftp://medical.nema.org/medical/dicom/resources/ontology/dcm/dcm.owl"
 NOW="$(date -Iseconds)"
