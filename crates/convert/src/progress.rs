@@ -48,11 +48,13 @@ pub fn progress_logger() -> (ProgressSender, std::thread::JoinHandle<()>) {
     let now = std::time::Instant::now();
     let threshold = 10000;
     let thread = std::thread::spawn(move || {
+        let mut next_milestone = threshold;
         let mut total = 0;
         while let Ok(x) = rx.recv() {
             total += x;
-            if total % threshold == 0 {
+            if total >= next_milestone {
                 info!("{} files converted", total);
+                next_milestone += threshold;
             }
         }
         let elapsed = now.elapsed();
