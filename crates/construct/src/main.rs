@@ -5,7 +5,7 @@ use std::{fs, io::Write};
 
 use clap::Parser;
 use config::Config;
-use construct::{MkQueryResult, mk_nested_construct_queries, mk_top_level_construct_queries};
+use construct::{MkQueryResult, nested_construct_queries, top_level_construct_queries};
 use reqwest::header::HeaderMap;
 
 #[derive(Parser)]
@@ -44,8 +44,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     let queries = [
-        mk_top_level_construct_queries(&config),
-        mk_nested_construct_queries(&config, args.max_depth),
+        top_level_construct_queries(&config),
+        nested_construct_queries(&config, args.max_depth),
     ]
     .concat();
     let longest_query_name = queries
@@ -74,8 +74,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let compressed = gz_encoder.finish()?;
-    let filename = format!("semantic-dicom-{}.ttl.gz", args.suffix);
-    let output_path = args.output.join(filename);
+    let file_name = format!("semantic-dicom-{}.ttl.gz", args.suffix);
+    let output_path = args.output.join(file_name);
     fs::write(&output_path, compressed)?;
     Ok(())
 }

@@ -39,21 +39,22 @@ impl<W: Write> Write for TripleWriter<W> {
     }
 }
 
-pub fn mk_writer(output_dir: &PathBuf, file_name: &str) -> BufWriter<File> {
-    fs::create_dir_all(output_dir).expect(&format!(
+pub fn writer<P: AsRef<Path>>(output_dir: P, file_name: &str) -> BufWriter<File> {
+    fs::create_dir_all(&output_dir).expect(&format!(
         "Failed to create output directory '{}'",
-        output_dir.display()
+        output_dir.as_ref().display()
     ));
-    let file_path = output_dir.join(file_name);
+    let file_path = output_dir.as_ref().join(file_name);
     let file = File::create(&file_path).expect(&format!(
         "Failed to create writer file '{}' in '{:?}'",
-        file_name, output_dir
+        file_name,
+        output_dir.as_ref()
     ));
     BufWriter::new(file)
 }
 
-pub fn mk_ttl_gz_writer(output_dir: &PathBuf, file_name: &str) -> GzEncoder<BufWriter<File>> {
-    let writer = mk_writer(output_dir, file_name);
+pub fn ttl_gz_writer<P: AsRef<Path>>(output_dir: P, file_name: &str) -> GzEncoder<BufWriter<File>> {
+    let writer = writer(output_dir.as_ref(), file_name);
     let mut encoder = GzEncoder::new(writer, Compression::fast());
     Write::write_all(
         &mut encoder,
@@ -70,7 +71,9 @@ pub fn mk_ttl_gz_writer(output_dir: &PathBuf, file_name: &str) -> GzEncoder<BufW
     encoder
 }
 
-pub fn handle_zst_file(path: impl AsRef<Path>) -> Result<(PathBuf, Option<TempDir>), Box<dyn Error>> {
+pub fn handle_zst_file<P: AsRef<Path>>(
+    path: P,
+) -> Result<(PathBuf, Option<TempDir>), Box<dyn Error>> {
     let path = path.as_ref();
     let temp_dir = tempdir()?;
     let tar_zst_file = File::open(&path)?;
@@ -99,7 +102,7 @@ fn is_dcm_or_zst(de: &walkdir::DirEntry) -> bool {
     }
 }
 
-pub fn get_dcm_or_zst_paths(root: &Path) -> impl Iterator<Item = PathBuf> {
+pub fn get_dcm_or_zst_paths<P: AsRef<Path>>(root: P) -> impl Iterator<Item = PathBuf> {
     let wd = WalkDir::new(root);
     wd.into_iter()
         .filter_map(|res| res.ok())

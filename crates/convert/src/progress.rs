@@ -43,7 +43,7 @@ impl Drop for ProgressSender {
     }
 }
 
-pub fn mk_progress_logger() -> (ProgressSender, std::thread::JoinHandle<()>) {
+pub fn progress_logger() -> (ProgressSender, std::thread::JoinHandle<()>) {
     let (tx, rx) = mpsc::channel();
     let now = std::time::Instant::now();
     let threshold = 10000;

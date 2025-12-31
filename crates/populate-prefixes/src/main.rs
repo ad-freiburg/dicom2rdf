@@ -11,8 +11,11 @@ use serde_yaml::Value;
 
 #[derive(Parser)]
 struct Args {
+    /// Path to config file
     #[arg(long)]
     config: PathBuf,
+
+    /// Path to Qleverfile-ui.yml
     #[arg(long)]
     qleverfile_ui: PathBuf,
 }

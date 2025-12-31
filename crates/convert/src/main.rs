@@ -4,16 +4,14 @@ static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use clap::Parser;
 use config::Config;
 use convert::dicom::write_triples;
-use convert::io::{
-    TripleWriter, get_dcm_or_zst_paths, handle_zst_file, mk_ttl_gz_writer, mk_writer,
-};
-use convert::progress::mk_progress_logger;
+use convert::io::{TripleWriter, get_dcm_or_zst_paths, handle_zst_file, ttl_gz_writer, writer};
+use convert::progress::progress_logger;
 use convert::turtle;
 use dicom::object::open_file;
 use log::{info, warn};
 use rayon::prelude::*;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 fn dir_exists(s: &str) -> Result<PathBuf, String> {
@@ -41,18 +39,18 @@ struct Args {
     output_dir: PathBuf,
 }
 
-fn convert_file(
+fn convert_file<P: AsRef<Path>>(
     triple_writer: &mut TripleWriter<impl Write>,
     error_writer: &mut impl Write,
-    path: &PathBuf,
+    path: P,
     config: &Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut buffer = Vec::new();
     let (dicom_file_path, _temp_dir_guard) =
-        if path.extension().and_then(|s| s.to_str()) == Some("zst") {
+        if path.as_ref().extension().and_then(|s| s.to_str()) == Some("zst") {
             handle_zst_file(&path)?
         } else {
-            (path.clone(), None)
+            (path.as_ref().to_path_buf(), None)
         };
 
     let file_name = dicom_file_path
@@ -94,7 +92,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("\x1b[1mStarting conversion of DICOM SR to raw RDF Turtle\x1b[0m");
     let worker_id = AtomicUsize::new(0);
-    let (progress_sender, progress_logger_thread) = mk_progress_logger();
+    let (progress_sender, progress_logger_thread) = progress_logger();
 
     get_dcm_or_zst_paths(args.input_dir.as_path())
         .par_bridge()
@@ -102,12 +100,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             || {
                 let worker_name =
                     format!("raw-dicom-{:03}", worker_id.fetch_add(1, Ordering::Relaxed));
-                let triple_writer = TripleWriter::new(mk_ttl_gz_writer(
+                let triple_writer = TripleWriter::new(ttl_gz_writer(
                     &args.output_dir,
                     &format!("{}.ttl.gz", worker_name),
                 ));
-                let error_writer =
-                    mk_writer(&args.output_dir, &format!("{}-errors.log", worker_name));
+                let error_writer = writer(&args.output_dir, &format!("{}-errors.log", worker_name));
                 (triple_writer, error_writer, progress_sender.clone())
             },
             |(triple_writer, error_writer, progress_sender), path| {

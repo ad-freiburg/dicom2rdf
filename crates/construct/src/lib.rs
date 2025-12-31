@@ -21,7 +21,7 @@ pub struct MkQueryResult {
     pub query: ConstructQuery,
 }
 
-fn mk_simple_queries(base: &ConstructQuery) -> Vec<MkQueryResult> {
+fn simple_queries(base: &ConstructQuery) -> Vec<MkQueryResult> {
     [
         ("accession_number", "dcm:121022", "dicom2rdf:00080050"),
         ("manufacturer", "dcm:121194", "dicom2rdf:00080070"),
@@ -55,7 +55,7 @@ fn mk_simple_queries(base: &ConstructQuery) -> Vec<MkQueryResult> {
     .to_vec()
 }
 
-fn make_datetime_queries(base: &ConstructQuery) -> Vec<MkQueryResult> {
+fn datetime_queries(base: &ConstructQuery) -> Vec<MkQueryResult> {
     [(
         "content_datetime",
         "rad:cdt",
@@ -87,7 +87,7 @@ fn make_datetime_queries(base: &ConstructQuery) -> Vec<MkQueryResult> {
     .to_vec()
 }
 
-fn make_uid_queries(base: &ConstructQuery) -> Vec<MkQueryResult> {
+fn uid_queries(base: &ConstructQuery) -> Vec<MkQueryResult> {
     [
         ("series_instance_uid", "dcm:112002", "dicom2rdf:0020000E"),
         ("sop_class_uid", "dcm:110181", "dicom2rdf:00080016"),
@@ -107,7 +107,7 @@ fn make_uid_queries(base: &ConstructQuery) -> Vec<MkQueryResult> {
     .to_vec()
 }
 
-fn make_other_queries(base: &ConstructQuery) -> Vec<MkQueryResult> {
+fn other_queries(base: &ConstructQuery) -> Vec<MkQueryResult> {
     [
         (
             "labels",
@@ -220,24 +220,24 @@ fn make_other_queries(base: &ConstructQuery) -> Vec<MkQueryResult> {
         }).to_vec()
 }
 
-pub fn mk_top_level_construct_queries(config: &Config) -> Vec<MkQueryResult> {
+pub fn top_level_construct_queries(config: &Config) -> Vec<MkQueryResult> {
     let base = ConstructQuery::new()
-        .with_prefixes(make_prefixes(config))
+        .with_prefixes(prefixes(config))
         .with_where(vec![
             "?level0 a dicom2rdf:DocumentRoot .",
             "?level0 dicom2rdf:00080018 ?sopInstanceUID .",
             r#"BIND(IRI(CONCAT(STR(rad:), "sopInstance/", ?sopInstanceUID)) AS ?level0IRI)"#,
         ]);
-    let simple_queries = mk_simple_queries(&base);
-    let datetime_queries = make_datetime_queries(&base);
-    let uid_queries = make_uid_queries(&base);
-    let other_queries = make_other_queries(&base);
+    let simple_queries = simple_queries(&base);
+    let datetime_queries = datetime_queries(&base);
+    let uid_queries = uid_queries(&base);
+    let other_queries = other_queries(&base);
     vec![simple_queries, datetime_queries, uid_queries, other_queries].concat()
 }
 
-pub fn mk_nested_construct_queries(config: &Config, max_nesting: u8) -> Vec<MkQueryResult> {
+pub fn nested_construct_queries(config: &Config, max_nesting: u8) -> Vec<MkQueryResult> {
     let base = ConstructQuery::new()
-        .with_prefixes(make_prefixes(config))
+        .with_prefixes(prefixes(config))
         .with_where(vec![
             "?level0 a dicom2rdf:DocumentRoot .",
             "?level0 dicom2rdf:00080018 ?sopInstanceUID .",
@@ -246,16 +246,16 @@ pub fn mk_nested_construct_queries(config: &Config, max_nesting: u8) -> Vec<MkQu
     (0..max_nesting)
         .flat_map(|n| {
             [
-                mk_code_query(base.clone(), n),
-                mk_num_query(base.clone(), n),
-                mk_text_query(base.clone(), n),
-                mk_uidref_query(base.clone(), n),
+                code_query(base.clone(), n),
+                num_query(base.clone(), n),
+                text_query(base.clone(), n),
+                uidref_query(base.clone(), n),
             ]
         })
         .collect()
 }
 
-fn mk_container_query(base: ConstructQuery, nesting: u8) -> ContainerResult {
+fn container_query(base: ConstructQuery, nesting: u8) -> ContainerResult {
     let construct = (1..nesting + 1).flat_map(|i| {
         let i_predecessor = i - 1;
         [
@@ -306,13 +306,13 @@ fn mk_container_query(base: ConstructQuery, nesting: u8) -> ContainerResult {
     }
 }
 
-fn mk_code_query(base: ConstructQuery, nesting: u8) -> MkQueryResult {
+fn code_query(base: ConstructQuery, nesting: u8) -> MkQueryResult {
     let ContainerResult {
         query,
         next_iri_var: iri_var,
         next_level_index_var: _,
         next_level_var: level_var,
-    } = mk_container_query(base, nesting);
+    } = container_query(base, nesting);
     MkQueryResult {
         name: format!("code_{nesting}"),
         query: query
@@ -345,13 +345,13 @@ fn mk_code_query(base: ConstructQuery, nesting: u8) -> MkQueryResult {
     }
 }
 
-fn mk_text_query(base: ConstructQuery, nesting: u8) -> MkQueryResult {
+fn text_query(base: ConstructQuery, nesting: u8) -> MkQueryResult {
     let ContainerResult {
         query,
         next_iri_var: iri_var,
         next_level_index_var: _,
         next_level_var: level_var,
-    } = mk_container_query(base, nesting);
+    } = container_query(base, nesting);
     MkQueryResult {
         name: format!("text_{nesting}"),
         query: query
@@ -375,13 +375,13 @@ fn mk_text_query(base: ConstructQuery, nesting: u8) -> MkQueryResult {
     }
 }
 
-fn mk_num_query(base: ConstructQuery, nesting: u8) -> MkQueryResult {
+fn num_query(base: ConstructQuery, nesting: u8) -> MkQueryResult {
     let ContainerResult {
         query,
         next_iri_var: iri_var,
         next_level_index_var,
         next_level_var,
-    } = mk_container_query(base, nesting);
+    } = container_query(base, nesting);
     MkQueryResult {
         name: format!("num_{nesting}"),
         query: query
@@ -415,13 +415,13 @@ fn mk_num_query(base: ConstructQuery, nesting: u8) -> MkQueryResult {
     }
 }
 
-fn mk_uidref_query(base: ConstructQuery, nesting: u8) -> MkQueryResult {
+fn uidref_query(base: ConstructQuery, nesting: u8) -> MkQueryResult {
     let ContainerResult {
         query,
         next_iri_var,
         next_level_index_var: _,
         next_level_var,
-    } = mk_container_query(base, nesting);
+    } = container_query(base, nesting);
     MkQueryResult {
         name: format!("uidref_{nesting}"),
         query: query
@@ -443,7 +443,7 @@ fn mk_uidref_query(base: ConstructQuery, nesting: u8) -> MkQueryResult {
     }
 }
 
-pub fn make_prefixes(config: &Config) -> Vec<String> {
+pub fn prefixes(config: &Config) -> Vec<String> {
     config
         .to_prefix_iri_pairs()
         .map(|(prefix, iri)| format!("PREFIX {}: <{}>", prefix, iri))
