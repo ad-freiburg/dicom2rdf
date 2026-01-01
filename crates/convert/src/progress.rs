@@ -53,7 +53,7 @@ pub fn progress_logger() -> (ProgressSender, std::thread::JoinHandle<()>) {
         while let Ok(x) = rx.recv() {
             total += x;
             if total >= next_milestone {
-                info!("{} files converted", total);
+                info!("{} files converted", next_milestone);
                 next_milestone += threshold;
             }
         }
