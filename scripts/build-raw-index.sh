@@ -11,5 +11,7 @@ for i in "${!files[@]}"; do
 	file="${files[$i]}"
 	name=$(basename "$file" .ttl.gz)
 	echo -e "\033[1m[$((i + 1))/${total}] Creating index for '$name'\033[0m"
-	QLEVER_NAME="$name" QLEVER_INPUT_FILES="../${file}" qlever index --overwrite-existing
+	QLEVER_NAME="$name" QLEVER_INPUT_FILES="../${file}" qlever \
+		--qleverfile /qlever/Qleverfile index \
+		--overwrite-existing
 done

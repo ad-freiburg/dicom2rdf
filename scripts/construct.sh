@@ -11,7 +11,7 @@ for i in "${!files[@]}"; do
 	file="${files[$i]}"
 	name=$(basename "$file" .meta-data.json)
 	suffix="${name##*-}"
-	QLEVER_NAME="$name" qlever start
+	QLEVER_NAME="$name" qlever --qleverfile /qlever/Qleverfile start
 	max_depth=$(
 		curl -s -G "http://localhost:7055" \
 			--data-urlencode "query=SELECT ?d WHERE { ?s <meta:maxDepth> ?d }" |
@@ -22,7 +22,7 @@ for i in "${!files[@]}"; do
 		--config /app/config.toml \
 		--suffix "$suffix" --output /ttl \
 		--max-depth "$max_depth"
-	QLEVER_NAME="$name" qlever stop
+	QLEVER_NAME="$name" qlever --qleverfile /qlever/Qleverfile stop
 done
 
 (

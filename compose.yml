@@ -13,9 +13,9 @@ services:
       - UID=${UID}
       - GID=${GID}
     volumes:
+      - ./Qleverfile:/qlever/Qleverfile
       - ./data/ttl-raw:/ttl:ro
       - ./data/index-raw:/data
-      - ./Qleverfile:/data/Qleverfile
       - ./scripts/build-raw-index.sh:/scripts/build-raw-index.sh
     working_dir: /data
     command: ["-c", "bash /scripts/build-raw-index.sh"]
@@ -28,9 +28,9 @@ services:
       - UID=${UID}
       - GID=${GID}
     volumes:
+      - ./Qleverfile:/qlever/Qleverfile
       - ./data/index-raw:/data
       - ./data/ttl-semantic:/ttl
-      - ./Qleverfile:/data/Qleverfile
     working_dir: /data
 
   build-semantic-index:
@@ -39,11 +39,11 @@ services:
       - UID=${UID}
       - GID=${GID}
     volumes:
+      - ./Qleverfile:/qlever/Qleverfile
       - ./data/ttl-semantic:/ttl:ro
       - ./data/index-semantic:/data
-      - ./Qleverfile:/data/Qleverfile
     working_dir: /data
-    command: ["-c", "QLEVER_NAME=semantic-dicom QLEVER_INPUT_FILES='../ttl/*.ttl.gz' qlever index --overwrite-existing"]
+    command: ["-c", "QLEVER_NAME=semantic-dicom QLEVER_INPUT_FILES='../ttl/*.ttl.gz' qlever --qleverfile /qlever/Qleverfile index --overwrite-existing"]
 
   qlever:
     image: docker.io/adfreiburg/qlever@sha256:04903551c4c8d27f8ba13e6e67906d30116e5b1ebf83f7716babbad61751b1b6
@@ -55,12 +55,12 @@ services:
       - UID=${UID}
       - GID=${GID}
     volumes:
+      - ./Qleverfile:/qlever/Qleverfile
       - ./data/index-semantic:/data
-      - ./Qleverfile:/data/Qleverfile
     ports:
       - "${QLEVER_PORT}:7055"
     working_dir: /data
-    command: ["-c", "QLEVER_NAME=semantic-dicom qlever start --run-in-foreground"]
+    command: ["-c", "QLEVER_NAME=semantic-dicom qlever --qleverfile /qlever/Qleverfile start --run-in-foreground"]
 
   qlever-ui:
     build:
