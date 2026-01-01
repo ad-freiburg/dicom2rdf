@@ -1,0 +1,9 @@
+[package]
+name = "dcmpeek"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+dicom = "0.8.2"
+zstd = "0.13"
+tar = "0.4"
