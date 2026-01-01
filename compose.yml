@@ -8,6 +8,9 @@ services:
       - ./data/ttl-raw:/ttl
 
   build-raw-index:
+    depends_on:
+      convert:
+        condition: service_completed_successfully
     image: docker.io/adfreiburg/qlever@sha256:04903551c4c8d27f8ba13e6e67906d30116e5b1ebf83f7716babbad61751b1b6
     environment:
       - UID=${UID}
@@ -21,6 +24,9 @@ services:
     command: ["-c", "bash /scripts/build-raw-index.sh"]
 
   construct:
+    depends_on:
+      build-raw-index:
+        condition: service_completed_successfully
     build:
       context: .
       target: construct
@@ -34,6 +40,9 @@ services:
     working_dir: /data
 
   build-semantic-index:
+    depends_on:
+      construct:
+        condition: service_completed_successfully
     image: docker.io/adfreiburg/qlever@sha256:04903551c4c8d27f8ba13e6e67906d30116e5b1ebf83f7716babbad61751b1b6
     environment:
       - UID=${UID}
@@ -46,11 +55,14 @@ services:
     command: ["-c", "QLEVER_NAME=semantic-dicom QLEVER_INPUT_FILES='../ttl/*.ttl.gz' qlever --qleverfile /qlever/Qleverfile index --overwrite-existing"]
 
   qlever:
+    depends_on:
+      build-semantic-index:
+        condition: service_completed_successfully
     image: docker.io/adfreiburg/qlever@sha256:04903551c4c8d27f8ba13e6e67906d30116e5b1ebf83f7716babbad61751b1b6
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://qlever:7055/ping"]
       start_period: 30s
-      start_interval: 5s
+      interval: 15s
     environment:
       - UID=${UID}
       - GID=${GID}
@@ -63,6 +75,9 @@ services:
     command: ["-c", "QLEVER_NAME=semantic-dicom qlever --qleverfile /qlever/Qleverfile start --run-in-foreground"]
 
   qlever-ui:
+    depends_on:
+      qlever:
+        condition: service_healthy
     build:
       context: .
       target: qlever-ui
@@ -71,6 +86,29 @@ services:
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://qlever-ui:7000/default"]
       start_period: 30s
-      start_interval: 5s
+      interval: 15s
     ports:
       - "${QLEVER_UI_PORT}:7000"
+
+  ready-message:
+    image: alpine:3
+    depends_on:
+      qlever-ui:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - |
+        echo ""
+        echo "╔═══════════════════════════════════════════════════════════════╗"
+        echo "║                                                               ║"
+        echo "║   ✓ All services started successfully!                        ║"
+        echo "║                                                               ║"
+        echo "║   QLever UI                                                   ║"
+        echo "║   → http://localhost:${QLEVER_UI_PORT}                                     ║"
+        echo "║                                                               ║"
+        echo "║   QLever SPARQL endpoint                                      ║"
+        echo "║   → http://localhost:${QLEVER_PORT}                                     ║"
+        echo "║                                                               ║"
+        echo "╚═══════════════════════════════════════════════════════════════╝"
+        echo ""

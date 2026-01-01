@@ -32,16 +32,15 @@ We use `docker` in the following examples, but `podman` works just as well.
     cp .env.example .env
     ```
 
-4.  Start the pipeline by providing both the base `compose.yml` as well as the
-    `compose.pipeline.yml` to ensure correct execution order:
+4.  Start the pipeline:
     ```bash
-    docker compose -f compose.yml -f compose.pipeline.yml up --build
+    docker compose up --build
     ```
 
     1.  In the future, you may also start QLever and QLever UI without a full
         pipeline run:
         ```bash
-        docker compose up qlever qlever-ui
+        docker compose -f compose.yml -f compose.isolated.yml up qlever qlever-ui
         ```
 
 5.  Wait for the "ready" message that displays the URLs of the QLever and QLever

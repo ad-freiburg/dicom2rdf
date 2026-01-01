@@ -1,0 +1,18 @@
+services:
+  build-raw-index:
+    depends_on: !reset {}
+
+  construct:
+    depends_on: !reset {}
+
+  build-semantic-index:
+    depends_on: !reset {}
+
+  qlever:
+    depends_on: !reset {}
+
+  qlever-ui:
+    depends_on: !reset {}
+
+  ready-message:
+    depends_on: !reset {}
