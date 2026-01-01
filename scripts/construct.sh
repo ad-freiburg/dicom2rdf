@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+rm -rf /ttl/*
+
 shopt -s nullglob
 files=(/data/*.meta-data.json)
 shopt -u nullglob

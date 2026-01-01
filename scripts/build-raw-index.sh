@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+rm -rf /data/*
+
 shopt -s nullglob
 files=(/ttl/*.ttl.gz)
 shopt -u nullglob

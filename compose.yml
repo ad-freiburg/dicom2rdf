@@ -52,7 +52,7 @@ services:
       - ./data/ttl-semantic:/ttl:ro
       - ./data/index-semantic:/data
     working_dir: /data
-    command: ["-c", "QLEVER_NAME=semantic-dicom QLEVER_INPUT_FILES='../ttl/*.ttl.gz' qlever --qleverfile /qlever/Qleverfile index --overwrite-existing"]
+    command: ["-c", "rm -rf ./* && QLEVER_NAME=semantic-dicom QLEVER_INPUT_FILES='../ttl/*.ttl.gz' qlever --qleverfile /qlever/Qleverfile index --overwrite-existing"]
 
   qlever:
     depends_on:

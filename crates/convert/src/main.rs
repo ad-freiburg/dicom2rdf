@@ -85,10 +85,25 @@ fn convert_file<P: AsRef<Path>>(
     Ok(())
 }
 
+fn clear_output_dir<P: AsRef<Path>>(output_dir: P) -> std::io::Result<()> {
+    for entry in std::fs::read_dir(output_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir() {
+            std::fs::remove_dir_all(&path)?;
+        } else {
+            std::fs::remove_file(&path)?;
+        }
+    }
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     let args = Args::parse();
     let config = Config::load_from_file(&args.config)?;
+
+    clear_output_dir(&args.output_dir)?;
 
     info!("\x1b[1mStarting conversion of DICOM SR to raw RDF Turtle\x1b[0m");
     let worker_id = AtomicUsize::new(0);
