@@ -1,6 +1,5 @@
 services:
   convert:
-    image: docker.io/aydio/dicom2rdf-convert:latest
     build:
       context: .
       target: convert
@@ -22,7 +21,6 @@ services:
     command: ["-c", "bash /scripts/build-raw-index.sh"]
 
   construct:
-    image: docker.io/aydio/dicom2rdf-construct:latest
     build:
       context: .
       target: construct
@@ -65,7 +63,6 @@ services:
     command: ["-c", "QLEVER_NAME=semantic-dicom qlever start --run-in-foreground"]
 
   qlever-ui:
-    image: docker.io/aydio/dicom2rdf-qlever-ui:latest
     build:
       context: .
       target: qlever-ui
