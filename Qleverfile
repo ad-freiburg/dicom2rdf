@@ -7,6 +7,7 @@ INPUT_FILES        = $$(printenv QLEVER_INPUT_FILES || echo "")
 MULTI_INPUT_JSON   = { "cmd": "zcat {}", "for-each": "${INPUT_FILES}", "parallel": "true" }
 SETTINGS_JSON      = { "num-triples-per-batch": 200000 }
 PARSER_BUFFER_SIZE = 10M
+ULIMIT             = 65536
 
 [server]
 HOST_NAME          = localhost
