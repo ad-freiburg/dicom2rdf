@@ -5,8 +5,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use flate2::Compression;
 
-const WELL_KNOWN_PREFIXES: &[u8] = br#"
-@prefix dicom2rdf: <http://dicom2rdf.uniklinik-freiburg.de/> .
+const WELL_KNOWN_PREFIXES: &[u8] =
+    br#"@prefix dicom2rdf: <http://dicom2rdf.uniklinik-freiburg.de/> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
