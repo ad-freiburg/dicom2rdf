@@ -13,6 +13,8 @@ resulting schema yields simpler SPARQL queries that are both highly explorable
 
 ## Example: Chronological [SSDE](https://radiopaedia.org/articles/size-specific-dose-estimate) by Acquisition Protocol
 
+<img width="640" alt="Screenshot 2026-01-04 at 14 30 30" src="https://github.com/user-attachments/assets/fd509570-95d2-4637-be82-d3811063f2dd" />
+
 # Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) with Docker Compose V2, or
@@ -50,7 +52,9 @@ We use `docker` in the following examples, but `podman` works just as well.
 5.  Wait for the "ready" message that displays the URLs of the QLever and QLever
     UI instances.
 
-6.  Explore your DICOM SR documents using QLever UI:
+6.  Open the Qlever UI, start typing a subject, and explore the available predicates:
+
+    <img width="640" alt="Screenshot 2026-01-04 at 14 32 12" src="https://github.com/user-attachments/assets/73814ee2-4677-4a46-8f09-2196a663a2c8" />
 
 # License
 
