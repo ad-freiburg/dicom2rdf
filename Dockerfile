@@ -14,7 +14,7 @@ FROM alpine:3 AS convert
 ENV RUST_LOG=info
 COPY --from=builder /tmp/convert /app/
 COPY config.toml /app/
-CMD ["/app/convert", "--config", "/app/config.toml", "--input-dir", "/input", "--output-dir", "/ttl"]
+CMD /app/convert --config /app/config.toml --input-dir /input --output-dir /ttl --max-ttl-file-size $MAX_TTL_FILE_SIZE
 
 FROM docker.io/adfreiburg/qlever@sha256:04903551c4c8d27f8ba13e6e67906d30116e5b1ebf83f7716babbad61751b1b6 AS construct
 USER root

@@ -1,8 +1,15 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{
+    LazyLock,
+    atomic::{AtomicUsize, Ordering},
+};
 
-static BLANK_NODE_COUNTER: AtomicUsize = AtomicUsize::new(0);
+use crate::turtle;
 
 const MAX_OBJECT_LENGTH: usize = 1000;
+
+static BLANK_NODE_COUNTER: AtomicUsize = AtomicUsize::new(0);
+pub static RDF_TYPE_IRI: LazyLock<turtle::IRI> =
+    LazyLock::new(|| turtle::IRI::prefix("rdf", "type"));
 
 pub struct Triple<'a> {
     pub subject: &'a IRI,

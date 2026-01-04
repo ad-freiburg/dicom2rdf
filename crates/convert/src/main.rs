@@ -4,15 +4,15 @@ static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use clap::Parser;
 use config::Config;
 use convert::dicom::write_triples;
-use convert::io::{TripleWriter, get_dcm_or_zst_paths, handle_zst_file, ttl_gz_writer, writer};
+use convert::path::{get_dcm_or_zst_paths, resolve_to_dicom_path};
 use convert::progress::progress_logger;
 use convert::turtle;
+use convert::writer::TripleWriter;
 use dicom::object::open_file;
 use log::{info, warn};
 use rayon::prelude::*;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 fn dir_exists(s: &str) -> Result<PathBuf, String> {
     let path = PathBuf::from(s);
@@ -37,21 +37,18 @@ struct Args {
     /// Directory where the output is written to
     #[arg(long, required = true, value_parser = dir_exists)]
     output_dir: PathBuf,
+
+    /// How large each written TTL file can become before the writer rotates
+    #[arg(long, required = true)]
+    max_ttl_file_size: usize,
 }
 
 fn convert_file<P: AsRef<Path>>(
-    triple_writer: &mut TripleWriter<impl Write>,
-    error_writer: &mut impl Write,
+    triple_writer: &mut TripleWriter,
     path: P,
     config: &Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut buffer = Vec::new();
-    let (dicom_file_path, _temp_dir_guard) =
-        if path.as_ref().extension().and_then(|s| s.to_str()) == Some("zst") {
-            handle_zst_file(&path)?
-        } else {
-            (path.as_ref().to_path_buf(), None)
-        };
+    let (dicom_file_path, _temp_dir_guard) = resolve_to_dicom_path(path)?;
 
     let file_name = dicom_file_path
         .file_name()
@@ -59,19 +56,20 @@ fn convert_file<P: AsRef<Path>>(
         .ok_or("Failed to get DICOM file name")?;
     let dicom_object = open_file(&dicom_file_path)?;
     let file_subject = turtle::IRI::prefix("dicom2rdf", file_name);
+    let mut buffer = Vec::new();
     writeln!(
         &mut buffer,
         "{}",
         turtle::triple(
             &file_subject,
-            &turtle::IRI::prefix("rdf", "type"),
+            &turtle::RDF_TYPE_IRI,
             &turtle::TripleObject::from(turtle::IRI::prefix("dicom2rdf", "DocumentRoot")),
         )
     )?;
 
     let (_, max_depth) = write_triples(
         &mut buffer,
-        error_writer,
+        triple_writer.log_writer(),
         &file_subject,
         &dicom_object,
         &file_name,
@@ -106,24 +104,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     clear_output_dir(&args.output_dir)?;
 
     info!("\x1b[1mStarting conversion of DICOM SR to raw RDF Turtle\x1b[0m");
-    let worker_id = AtomicUsize::new(0);
     let (progress_sender, progress_logger_thread) = progress_logger();
 
     get_dcm_or_zst_paths(args.input_dir.as_path())
         .par_bridge()
         .for_each_init(
             || {
-                let worker_name =
-                    format!("raw-dicom-{:03}", worker_id.fetch_add(1, Ordering::Relaxed));
-                let triple_writer = TripleWriter::new(ttl_gz_writer(
-                    &args.output_dir,
-                    &format!("{}.ttl.gz", worker_name),
-                ));
-                let error_writer = writer(&args.output_dir, &format!("{}-errors.log", worker_name));
-                (triple_writer, error_writer, progress_sender.clone())
+                let triple_writer =
+                    TripleWriter::new(&args.output_dir, "raw-dicom", args.max_ttl_file_size)
+                        .expect("Failed to create ConvertOutputWriter");
+                (triple_writer, progress_sender.clone())
             },
-            |(triple_writer, error_writer, progress_sender), path| {
-                if let Err(e) = convert_file(triple_writer, error_writer, &path, &config) {
+            |(triple_writer, progress_sender), path| {
+                if let Err(e) = convert_file(triple_writer, &path, &config) {
                     warn!("Failed to convert file {:?}: {}", path, e)
                 }
                 progress_sender.tick();

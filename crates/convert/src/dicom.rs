@@ -12,6 +12,8 @@ use std::error::Error;
 use std::io::Write;
 use std::sync::LazyLock;
 
+pub static DOCUMENT_ROOT_IRI: LazyLock<turtle::IRI> =
+    LazyLock::new(|| turtle::IRI::prefix("dicom2rdf", "DocumentRoot"));
 static INDEX_IRI: LazyLock<turtle::IRI> =
     LazyLock::new(|| turtle::IRI::prefix("dicom2rdf", "index"));
 static ITEM_IRI: LazyLock<turtle::IRI> = LazyLock::new(|| turtle::IRI::prefix("dicom2rdf", "item"));
