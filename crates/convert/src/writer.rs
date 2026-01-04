@@ -30,16 +30,20 @@ fn writers<P: AsRef<Path>>(destination: P, name: &str) -> io::Result<(GzWriter, 
             ),
         )
     })?;
-    let id = WRITER_ID.fetch_add(1, Ordering::Relaxed);
+    let prefix = format!("{:03}", WRITER_ID.fetch_add(1, Ordering::Relaxed));
     let triple_file = File::create(
         destination
             .as_ref()
-            .join(&format!("{}-{}.ttl.gz", id, name)),
+            .join(&format!("{}-{}.ttl.gz", prefix, name)),
     )?;
     let mut triple_writer =
         flate2::write::GzEncoder::new(io::BufWriter::new(triple_file), Compression::fast());
 
-    let log_file = File::create(destination.as_ref().join(&format!("{}-{}.log", id, name)))?;
+    let log_file = File::create(
+        destination
+            .as_ref()
+            .join(&format!("{}-{}.log", prefix, name)),
+    )?;
     let log_writer = io::BufWriter::new(log_file);
 
     triple_writer.write_all(WELL_KNOWN_PREFIXES).map_err(|e| {
