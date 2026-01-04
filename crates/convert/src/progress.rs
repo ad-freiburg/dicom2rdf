@@ -53,14 +53,18 @@ pub fn progress_logger() -> (ProgressSender, std::thread::JoinHandle<()>) {
         while let Ok(x) = rx.recv() {
             total += x;
             if total >= next_milestone {
-                info!("{} files converted", next_milestone);
+                let files_per_second = total as f64 / now.elapsed().as_secs_f64();
+                info!(
+                    "{} files converted ({:.2} files/sec)",
+                    next_milestone, files_per_second
+                );
                 next_milestone += threshold;
             }
         }
         let elapsed = now.elapsed();
         let files_per_second = total as f64 / elapsed.as_secs_f64();
         info!(
-            "\x1b[1mFinished converting {} files in {:.2?} ({:.2} files/s)\x1b[0m",
+            "\x1b[1mFinished converting {} files in {:.2?} ({:.2} files/sec)\x1b[0m",
             total, elapsed, files_per_second
         );
     });
