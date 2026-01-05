@@ -12,7 +12,7 @@ total=${#files[@]}
 for i in "${!files[@]}"; do
 	file="${files[$i]}"
 	name=$(basename "$file" .meta-data.json)
-	suffix="${name##*-}"
+	suffix="${name%%-*}"
 	QLEVER_NAME="$name" qlever --qleverfile /qlever/Qleverfile start
 	max_depth=$(
 		curl -s -G "http://localhost:7055" \
