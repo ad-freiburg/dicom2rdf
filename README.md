@@ -1,6 +1,6 @@
 # dicom2rdf
 
-`dicom2rdf` is a data pipeline that converts [DICOM](https://www.dicomstandard.org/)
+`dicom2rdf` is a data pipeline that converts millions of [DICOM](https://www.dicomstandard.org/)
 SR documents to [RDF Turtle](https://www.w3.org/TR/turtle/) and makes them
 searchable with [QLever](https://github.com/ad-freiburg/qlever), a high
 performance graph database.
