@@ -13,7 +13,7 @@ resulting schema yields simpler SPARQL queries that are both highly explorable
 
 ## Example: Chronological [SSDE](https://radiopaedia.org/articles/size-specific-dose-estimate) by Acquisition Protocol
 
-<img width="1538" height="1444" alt="image" src="https://github.com/user-attachments/assets/4357af09-cb39-48af-aca5-da3046c7fd8a" />
+<img width="640" alt="image" src="https://github.com/user-attachments/assets/6eada878-9509-4a37-98ed-614990966c82" />
 
 # Prerequisites
 
