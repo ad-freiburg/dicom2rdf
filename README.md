@@ -57,7 +57,3 @@ We use `docker` in the following examples, but `podman` works just as well.
     predicates:
 
     <img width="640" alt="Screenshot 2026-01-04 at 14 32 12" src="https://github.com/user-attachments/assets/73814ee2-4677-4a46-8f09-2196a663a2c8" />
-
-# License
-
-TBD
