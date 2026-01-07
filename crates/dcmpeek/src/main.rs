@@ -1,4 +1,4 @@
-use std::io::{self, Cursor, Read};
+use std::io::{self, Cursor, IsTerminal, Read};
 
 use dicom::dump::dump_object;
 use dicom::object::from_reader;
@@ -7,6 +7,11 @@ use tar::Archive;
 const ZSTD_MAGIC: [u8; 4] = [0x28, 0xB5, 0x2F, 0xFD];
 
 fn main() {
+    if io::stdin().is_terminal() {
+        eprintln!("Usage: dcmpeek <file.dcm");
+        eprintln!("       dcmpeek <file.tar.zst");
+        std::process::exit(1);
+    }
     let mut input: Vec<u8> = Vec::new();
     io::stdin()
         .read_to_end(&mut input)
