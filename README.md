@@ -1,15 +1,16 @@
 # dicom2rdf
 
 `dicom2rdf` is a data pipeline that converts millions of [DICOM](https://www.dicomstandard.org/)
-SR documents to [RDF Turtle](https://www.w3.org/TR/turtle/) and makes them
-searchable with [QLever](https://github.com/ad-freiburg/qlever), a high
-performance graph database.
+SR documents to [RDF Turtle](https://www.w3.org/TR/turtle/), makes its metadata
+searchable with [SPARQL](https://www.w3.org/TR/sparql11-query/), and is powered
+by [Qlever](https://github.com/ad-freiburg/qlever), a high performance graph
+database.
 
 Unlike other approaches that only translate the bare hierarchical structure of a
 DICOM SR document to RDF triples, `dicom2rdf` applies a second processing step
-to transform this raw structure with a set of SPARQL CONSTRUCT queries. The
-resulting schema yields simpler SPARQL queries that are both highly explorable
- and run faster.
+to transform this raw structure via a set of [SPARQL CONSTRUCT](https://www.w3.org/TR/sparql11-query/#construct)
+queries. The resulting schema yields simpler SPARQL queries that are both highly
+explorable and run faster.
 
 ## Example: Chronological [SSDE](https://radiopaedia.org/articles/size-specific-dose-estimate) by Acquisition Protocol
 
@@ -52,7 +53,8 @@ We use `docker` in the following examples, but `podman` works just as well.
 5.  Wait for the "ready" message that displays the URLs of the QLever and QLever
     UI instances.
 
-6.  Open the Qlever UI, start typing a subject, and explore the available predicates:
+6.  Open the Qlever UI, start typing a subject, and explore the available
+    predicates:
 
     <img width="640" alt="Screenshot 2026-01-04 at 14 32 12" src="https://github.com/user-attachments/assets/73814ee2-4677-4a46-8f09-2196a663a2c8" />
 
