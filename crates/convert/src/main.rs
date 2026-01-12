@@ -41,6 +41,10 @@ struct Args {
     /// How large each written TTL file can become before the writer rotates
     #[arg(long, required = true)]
     max_ttl_file_size: usize,
+
+    /// Gzip compression level (0-9)
+    #[arg(long, default_value = "1", value_parser = clap::value_parser!(u32).range(0..=9))]
+    compression_level: u32,
 }
 
 fn convert_file<P: AsRef<Path>>(
@@ -110,9 +114,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .par_bridge()
         .for_each_init(
             || {
-                let triple_writer =
-                    TripleWriter::new(&args.output_dir, "raw-dicom", args.max_ttl_file_size)
-                        .expect("Failed to create ConvertOutputWriter");
+                let triple_writer = TripleWriter::new(
+                    &args.output_dir,
+                    "raw-dicom",
+                    args.max_ttl_file_size,
+                    args.compression_level,
+                )
+                .expect("Failed to create ConvertOutputWriter");
                 (triple_writer, progress_sender.clone())
             },
             |(triple_writer, progress_sender), path| {

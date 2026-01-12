@@ -19,7 +19,11 @@ static WRITER_ID: AtomicUsize = AtomicUsize::new(0);
 type GzWriter = flate2::write::GzEncoder<BufWriter<File>>;
 type LogWriter = BufWriter<File>;
 
-fn writers<P: AsRef<Path>>(destination: P, name: &str) -> io::Result<(GzWriter, LogWriter)> {
+fn writers<P: AsRef<Path>>(
+    destination: P,
+    name: &str,
+    compression_level: u32,
+) -> io::Result<(GzWriter, LogWriter)> {
     std::fs::create_dir_all(&destination).map_err(|e| {
         io::Error::new(
             e.kind(),
@@ -36,8 +40,10 @@ fn writers<P: AsRef<Path>>(destination: P, name: &str) -> io::Result<(GzWriter, 
             .as_ref()
             .join(&format!("{}-{}.ttl.gz", prefix, name)),
     )?;
-    let mut triple_writer =
-        flate2::write::GzEncoder::new(io::BufWriter::new(triple_file), Compression::fast());
+    let mut triple_writer = flate2::write::GzEncoder::new(
+        io::BufWriter::new(triple_file),
+        Compression::new(compression_level),
+    );
 
     let log_file = File::create(
         destination
@@ -66,6 +72,7 @@ pub struct TripleWriter {
     destination: PathBuf,
     bytes_written: usize,
     max_ttl_file_size: usize,
+    compression_level: u32,
 }
 
 impl TripleWriter {
@@ -73,14 +80,16 @@ impl TripleWriter {
         destination: P,
         name: &str,
         max_ttl_file_size: usize,
+        compression_level: u32,
     ) -> io::Result<Self> {
-        let (writer, log_writer) = writers(&destination, name)?;
+        let (writer, log_writer) = writers(&destination, name, compression_level)?;
         Ok(TripleWriter {
             triple_buffer: Vec::new(),
             bytes_written: 0,
             destination: destination.as_ref().to_path_buf(),
             name: String::from(name),
             max_ttl_file_size,
+            compression_level,
             max_depth: 0,
             triple_writer: writer,
             log_writer,
@@ -96,7 +105,8 @@ impl TripleWriter {
         self.triple_writer.flush()?;
         self.log_writer.flush()?;
 
-        let (triple_writer, log_writer) = writers(&self.destination, &self.name)?;
+        let (triple_writer, log_writer) =
+            writers(&self.destination, &self.name, self.compression_level)?;
 
         self.triple_writer = triple_writer;
         self.log_writer = log_writer;
