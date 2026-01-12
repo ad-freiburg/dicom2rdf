@@ -45,6 +45,10 @@ struct Args {
     /// Gzip compression level (0-9)
     #[arg(long, default_value = "1", value_parser = clap::value_parser!(u32).range(0..=9))]
     compression_level: u32,
+
+    /// Number of rayon worker threads (default: whatever rayon defaults to)
+    #[arg(long)]
+    num_threads: Option<usize>,
 }
 
 fn convert_file<P: AsRef<Path>>(
@@ -103,6 +107,13 @@ fn clear_output_dir<P: AsRef<Path>>(output_dir: P) -> std::io::Result<()> {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     let args = Args::parse();
+
+    if let Some(num_threads) = args.num_threads {
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(num_threads)
+            .build_global()?;
+    }
+
     let config = Config::load_from_file(&args.config)?;
 
     clear_output_dir(&args.output_dir)?;
