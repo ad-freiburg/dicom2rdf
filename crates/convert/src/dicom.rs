@@ -161,15 +161,16 @@ pub fn write_triples(
                         let object = if group == 0x0008 && element == 0x0102 {
                             turtle::TripleObject::from(turtle::IRI::full(
                                 config
-                                    .dicom
-                                    .iter()
-                                    .find(|x| x.coding_scheme == val)
-                                    .map(|x| Cow::from(String::from(&x.iri)))
-                                    .unwrap_or(Cow::Owned(format!(
-                                        "{}{}_",
-                                        &config.fallback.iri,
-                                        urlencoding::encode(val)
-                                    ))),
+                                    .coding_scheme_to_iri
+                                    .get(val)
+                                    .map(|iri| Cow::from(iri.as_str()))
+                                    .unwrap_or_else(|| {
+                                        Cow::Owned(format!(
+                                            "{}{}_",
+                                            &config.fallback.iri,
+                                            urlencoding::encode(val)
+                                        ))
+                                    }),
                             ))
                         } else {
                             turtle::TripleObject::from(turtle::PlainLiteral::String(val.into()))

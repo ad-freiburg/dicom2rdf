@@ -1,6 +1,11 @@
 use dicom::core::Tag;
 use serde::{Deserialize, Deserializer};
-use std::{collections::HashSet, error::Error, fs, path::Path};
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+    fs,
+    path::Path,
+};
 
 fn deserialize_tags<'de, D>(deserializer: D) -> Result<HashSet<Tag>, D::Error>
 where
@@ -31,12 +36,19 @@ pub struct Config {
     pub forbidden_code_meanings: HashSet<String>,
     #[serde(deserialize_with = "deserialize_tags")]
     pub forbidden_dicom_tags: HashSet<Tag>,
+    #[serde(skip)]
+    pub coding_scheme_to_iri: HashMap<String, String>,
 }
 
 impl Config {
     pub fn load_from_file(path: impl AsRef<Path>) -> Result<Self, Box<dyn Error>> {
         let config_str = fs::read_to_string(path)?;
-        let config = toml::from_str(&config_str)?;
+        let mut config: Config = toml::from_str(&config_str)?;
+        config.coding_scheme_to_iri = config
+            .dicom
+            .iter()
+            .map(|entry| (entry.coding_scheme.clone(), entry.iri.clone()))
+            .collect();
         Ok(config)
     }
 
