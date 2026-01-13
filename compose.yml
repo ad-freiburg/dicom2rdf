@@ -6,6 +6,7 @@ services:
     environment:
       - MAX_TTL_FILE_SIZE_IN_MB=${MAX_TTL_FILE_SIZE_IN_MB}
       - COMPRESSION_LEVEL=${COMPRESSION_LEVEL}
+      - NUM_THREADS=${NUM_THREADS:-}
     volumes:
       - ${INPUT}:/input:ro
       - ./data/ttl-raw:/ttl
