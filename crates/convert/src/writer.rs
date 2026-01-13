@@ -71,7 +71,7 @@ pub struct TripleWriter {
     name: String,
     destination: PathBuf,
     bytes_written: usize,
-    max_ttl_file_size: usize,
+    max_ttl_file_size_in_bytes: usize,
     compression_level: u32,
 }
 
@@ -79,7 +79,7 @@ impl TripleWriter {
     pub fn new<P: AsRef<Path>>(
         destination: P,
         name: &str,
-        max_ttl_file_size: usize,
+        max_ttl_file_size_in_bytes: usize,
         compression_level: u32,
     ) -> io::Result<Self> {
         let (writer, log_writer) = writers(&destination, name, compression_level)?;
@@ -88,7 +88,7 @@ impl TripleWriter {
             bytes_written: 0,
             destination: destination.as_ref().to_path_buf(),
             name: String::from(name),
-            max_ttl_file_size,
+            max_ttl_file_size_in_bytes,
             compression_level,
             max_depth: 0,
             triple_writer: writer,
@@ -136,7 +136,7 @@ impl io::Write for TripleWriter {
         self.triple_writer.flush()?;
         self.bytes_written += self.triple_buffer.len();
         self.triple_buffer.clear();
-        if self.bytes_written >= self.max_ttl_file_size {
+        if self.bytes_written >= self.max_ttl_file_size_in_bytes {
             self.rotate()?;
         }
         Ok(())

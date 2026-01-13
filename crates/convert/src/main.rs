@@ -38,9 +38,10 @@ struct Args {
     #[arg(long, required = true, value_parser = dir_exists)]
     output_dir: PathBuf,
 
-    /// How large each written TTL file can become before the writer rotates
+    /// How large each written Turtle file inside the archive can become before
+    /// the writer rotates
     #[arg(long, required = true)]
-    max_ttl_file_size: usize,
+    max_ttl_file_size_in_mb: usize,
 
     /// Gzip compression level (0-9)
     #[arg(long, default_value = "1", value_parser = clap::value_parser!(u32).range(0..=9))]
@@ -128,7 +129,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let triple_writer = TripleWriter::new(
                     &args.output_dir,
                     "raw-dicom",
-                    args.max_ttl_file_size,
+                    args.max_ttl_file_size_in_mb * 1024 * 1024,
                     args.compression_level,
                 )
                 .expect("Failed to create ConvertOutputWriter");

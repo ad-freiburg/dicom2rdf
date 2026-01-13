@@ -4,7 +4,7 @@ services:
       context: .
       target: convert
     environment:
-      - MAX_TTL_FILE_SIZE=${MAX_TTL_FILE_SIZE}
+      - MAX_TTL_FILE_SIZE_IN_MB=${MAX_TTL_FILE_SIZE_IN_MB}
     volumes:
       - ${INPUT}:/input:ro
       - ./data/ttl-raw:/ttl
