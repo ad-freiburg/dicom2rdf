@@ -44,7 +44,7 @@ struct Args {
     max_ttl_file_size_in_mb: usize,
 
     /// Gzip compression level (0-9)
-    #[arg(long, default_value = "1", value_parser = clap::value_parser!(u32).range(0..=9))]
+    #[arg(long, required = true, value_parser = clap::value_parser!(u32).range(0..=9))]
     compression_level: u32,
 
     /// Number of rayon worker threads (default: whatever rayon defaults to)
