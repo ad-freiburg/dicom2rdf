@@ -1,6 +1,6 @@
 [data]
 NAME              = $$(printenv QLEVER_NAME)
-DESCRIPTION       = Semantic DICOM
+DESCRIPTION       = DICOM
 
 [index]
 INPUT_FILES        = $$(printenv QLEVER_INPUT_FILES || echo "")

@@ -16,3 +16,25 @@ services:
 
   ready-message:
     depends_on: !reset {}
+
+  qlever-raw:
+    image: docker.io/adfreiburg/qlever@sha256:04903551c4c8d27f8ba13e6e67906d30116e5b1ebf83f7716babbad61751b1b6
+    environment:
+      - UID=${UID}
+      - GID=${GID}
+    volumes:
+      - ./Qleverfile:/qlever/Qleverfile
+      - ./data/index-raw:/data
+    ports:
+      - "7056:7055"
+    working_dir: /data
+    command: ["-c", "QLEVER_NAME=000-raw-dicom-merged qlever --qleverfile /qlever/Qleverfile start --run-in-foreground"]
+
+  qlever-ui-raw:
+    build:
+      context: .      
+      target: qlever-ui
+    environment:
+      - QLEVER_PORT=7056
+    ports:
+      - "8177:7000"
