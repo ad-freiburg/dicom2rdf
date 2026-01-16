@@ -1,7 +1,7 @@
 #[global_allocator]
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
-use clap::{CommandFactory, Parser};
+use clap::Parser;
 use config::Config;
 use convert::dicom::write_triples;
 use convert::merge::merge_chunks;
@@ -56,19 +56,6 @@ struct Args {
     num_threads: Option<usize>,
 }
 
-impl Args {
-    fn validate(self) -> Self {
-        if self.max_triples_per_file % self.chunk_size != 0 {
-            let mut cmd = Args::command();
-            cmd.error(
-                clap::error::ErrorKind::ValueValidation,
-                "max_triples_per_file ({}) must be a multiple of chunk_size ({})",
-            )
-            .exit();
-        };
-        self
-    }
-}
 
 fn convert_file<P: AsRef<Path>>(
     triple_writer: &mut TripleWriter,
@@ -125,7 +112,7 @@ fn clear_output_dir<P: AsRef<Path>>(output_dir: P) -> std::io::Result<()> {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
-    let args = Args::parse().validate();
+    let args = Args::parse();
 
     if let Some(num_threads) = args.num_threads {
         rayon::ThreadPoolBuilder::new()
@@ -166,7 +153,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("\x1b[1mMerging chunk files\x1b[0m");
     merge_chunks(
         &args.output_dir,
-        args.chunk_size,
         args.max_triples_per_file,
         args.compression_level,
     )?;

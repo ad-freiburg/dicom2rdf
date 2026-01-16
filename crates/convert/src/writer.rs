@@ -97,7 +97,7 @@ impl TripleWriter {
     fn rotate(&mut self) -> io::Result<()> {
         self.triple_writer.flush()?;
         self.log_writer.flush()?;
-        self.rename_with_depth()?;
+        self.write_chunk_metadata()?;
         let new_prefix = next_prefix();
 
         let (triple_writer, log_writer) = writers(
@@ -116,23 +116,14 @@ impl TripleWriter {
         Ok(())
     }
 
-    fn rename_with_depth(&self) -> io::Result<()> {
-        let old_ttl = self
+    fn write_chunk_metadata(&self) -> io::Result<()> {
+        let meta_path = self
             .destination
-            .join(format!("{}-{}.ttl.gz", self.current_prefix, self.name));
-        let new_ttl = self.destination.join(format!(
-            "{}-{}-max-depth-{:02}.ttl.gz",
-            self.current_prefix, self.name, self.max_depth
-        ));
-        fs::rename(&old_ttl, &new_ttl)?;
-        let old_log = self
-            .destination
-            .join(format!("{}-{}.log", self.current_prefix, self.name));
-        let new_log = self.destination.join(format!(
-            "{}-{}-max-depth-{:02}.log",
-            self.current_prefix, self.name, self.max_depth
-        ));
-        fs::rename(&old_log, &new_log)?;
+            .join(format!("{}-{}.meta", self.current_prefix, self.name));
+        fs::write(
+            meta_path,
+            format!("{} {}", self.max_depth, self.triples_written),
+        )?;
         Ok(())
     }
 }
@@ -166,6 +157,7 @@ impl Drop for TripleWriter {
     fn drop(&mut self) {
         let _ = self.triple_writer.write_all(&self.triple_buffer);
         let _ = self.triple_writer.flush();
-        let _ = self.rename_with_depth();
+        self.triples_written += self.triple_buffer.iter().filter(|&&b| b == b'\n').count();
+        let _ = self.write_chunk_metadata();
     }
 }
