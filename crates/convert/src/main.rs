@@ -1,9 +1,10 @@
 #[global_allocator]
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 use config::Config;
 use convert::dicom::write_triples;
+use convert::merge::merge_chunks;
 use convert::path::{get_dcm_or_zst_paths, resolve_to_dicom_path};
 use convert::progress::progress_logger;
 use convert::turtle;
@@ -38,10 +39,13 @@ struct Args {
     #[arg(long, required = true, value_parser = dir_exists)]
     output_dir: PathBuf,
 
-    /// How large each written Turtle file inside the archive can become before
-    /// the writer rotates
+    /// Number of triples per chunk file
     #[arg(long, required = true)]
-    max_ttl_file_size_in_mb: usize,
+    chunk_size: usize,
+
+    /// Maximum triples per final output file, must be multiple of chunk_size.
+    #[arg(long, required = true)]
+    max_triples_per_file: usize,
 
     /// Gzip compression level (0-9)
     #[arg(long, required = true, value_parser = clap::value_parser!(u32).range(0..=9))]
@@ -50,6 +54,20 @@ struct Args {
     /// Number of rayon worker threads (default: whatever rayon defaults to)
     #[arg(long)]
     num_threads: Option<usize>,
+}
+
+impl Args {
+    fn validate(self) -> Self {
+        if self.max_triples_per_file % self.chunk_size != 0 {
+            let mut cmd = Args::command();
+            cmd.error(
+                clap::error::ErrorKind::ValueValidation,
+                "max_triples_per_file ({}) must be a multiple of chunk_size ({})",
+            )
+            .exit();
+        };
+        self
+    }
 }
 
 fn convert_file<P: AsRef<Path>>(
@@ -107,7 +125,7 @@ fn clear_output_dir<P: AsRef<Path>>(output_dir: P) -> std::io::Result<()> {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
-    let args = Args::parse();
+    let args = Args::parse().validate();
 
     if let Some(num_threads) = args.num_threads {
         rayon::ThreadPoolBuilder::new()
@@ -129,10 +147,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let triple_writer = TripleWriter::new(
                     &args.output_dir,
                     "raw-dicom",
-                    args.max_ttl_file_size_in_mb * 1024 * 1024,
+                    args.chunk_size,
                     args.compression_level,
                 )
-                .expect("Failed to create ConvertOutputWriter");
+                .expect("Failed to create TripleWriter");
                 (triple_writer, progress_sender.clone())
             },
             |(triple_writer, progress_sender), path| {
@@ -144,6 +162,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
     drop(progress_sender);
     progress_logger_thread.join().expect("Thread panicked");
+
+    info!("\x1b[1mMerging chunk files\x1b[0m");
+    merge_chunks(
+        &args.output_dir,
+        args.chunk_size,
+        args.max_triples_per_file,
+        args.compression_level,
+    )?;
 
     Ok(())
 }

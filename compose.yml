@@ -4,7 +4,8 @@ services:
       context: .
       target: convert
     environment:
-      - MAX_TTL_FILE_SIZE_IN_MB=${MAX_TTL_FILE_SIZE_IN_MB}
+      - CHUNK_SIZE=${CHUNK_SIZE}
+      - MAX_TRIPLES_PER_FILE=${MAX_TRIPLES_PER_FILE}
       - COMPRESSION_LEVEL=${COMPRESSION_LEVEL}
       - NUM_THREADS=${NUM_THREADS:-}
     volumes:

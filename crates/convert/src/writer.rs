@@ -1,16 +1,9 @@
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{self, BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use flate2::Compression;
-
-const WELL_KNOWN_PREFIXES: &[u8] =
-    br#"@prefix dicom2rdf: <http://dicom2rdf.uniklinik-freiburg.de/> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-"#;
 
 const WRITER_BUFFER_SIZE: usize = 8192 * 8;
 
@@ -22,6 +15,7 @@ type LogWriter = BufWriter<File>;
 fn writers<P: AsRef<Path>>(
     destination: P,
     name: &str,
+    prefix: &str,
     compression_level: u32,
 ) -> io::Result<(GzWriter, LogWriter)> {
     std::fs::create_dir_all(&destination).map_err(|e| {
@@ -34,13 +28,12 @@ fn writers<P: AsRef<Path>>(
             ),
         )
     })?;
-    let prefix = format!("{:03}", WRITER_ID.fetch_add(1, Ordering::Relaxed));
     let triple_file = File::create(
         destination
             .as_ref()
-            .join(&format!("{}-{}.ttl.gz", prefix, name)),
+            .join(format!("{}-{}.ttl.gz", prefix, name)),
     )?;
-    let mut triple_writer = flate2::write::GzEncoder::new(
+    let triple_writer = flate2::write::GzEncoder::new(
         io::BufWriter::new(triple_file),
         Compression::new(compression_level),
     );
@@ -52,13 +45,11 @@ fn writers<P: AsRef<Path>>(
     )?;
     let log_writer = io::BufWriter::new(log_file);
 
-    triple_writer.write_all(WELL_KNOWN_PREFIXES).map_err(|e| {
-        io::Error::new(
-            e.kind(),
-            "Failed to write well-known prefixes to triple writer",
-        )
-    })?;
     Ok((triple_writer, log_writer))
+}
+
+fn next_prefix() -> String {
+    format!("{:03}", WRITER_ID.fetch_add(1, Ordering::Relaxed))
 }
 
 pub struct TripleWriter {
@@ -70,8 +61,9 @@ pub struct TripleWriter {
 
     name: String,
     destination: PathBuf,
-    bytes_written: usize,
-    max_ttl_file_size_in_bytes: usize,
+    current_prefix: String,
+    triples_written: usize,
+    chunk_size: usize,
     compression_level: u32,
 }
 
@@ -79,16 +71,18 @@ impl TripleWriter {
     pub fn new<P: AsRef<Path>>(
         destination: P,
         name: &str,
-        max_ttl_file_size_in_bytes: usize,
+        chunk_size: usize,
         compression_level: u32,
     ) -> io::Result<Self> {
-        let (writer, log_writer) = writers(&destination, name, compression_level)?;
+        let prefix = next_prefix();
+        let (writer, log_writer) = writers(&destination, name, &prefix, compression_level)?;
         Ok(TripleWriter {
             triple_buffer: Vec::new(),
-            bytes_written: 0,
+            triples_written: 0,
             destination: destination.as_ref().to_path_buf(),
             name: String::from(name),
-            max_ttl_file_size_in_bytes,
+            current_prefix: prefix,
+            chunk_size,
             compression_level,
             max_depth: 0,
             triple_writer: writer,
@@ -101,23 +95,45 @@ impl TripleWriter {
     }
 
     fn rotate(&mut self) -> io::Result<()> {
-        self.write_max_depth_triple()?;
         self.triple_writer.flush()?;
         self.log_writer.flush()?;
+        self.rename_with_depth()?;
+        let new_prefix = next_prefix();
 
-        let (triple_writer, log_writer) =
-            writers(&self.destination, &self.name, self.compression_level)?;
+        let (triple_writer, log_writer) = writers(
+            &self.destination,
+            &self.name,
+            &new_prefix,
+            self.compression_level,
+        )?;
 
         self.triple_writer = triple_writer;
         self.log_writer = log_writer;
-        self.bytes_written = 0;
+        self.current_prefix = new_prefix;
+        self.triples_written = 0;
+        self.max_depth = 0;
 
         Ok(())
     }
 
-    fn write_max_depth_triple(&mut self) -> io::Result<()> {
-        let max_depth_triple = format!("<> <meta:maxDepth> {} .\n", self.max_depth);
-        self.triple_writer.write_all(max_depth_triple.as_bytes())
+    fn rename_with_depth(&self) -> io::Result<()> {
+        let old_ttl = self
+            .destination
+            .join(format!("{}-{}.ttl.gz", self.current_prefix, self.name));
+        let new_ttl = self.destination.join(format!(
+            "{}-{}-max-depth-{:02}.ttl.gz",
+            self.current_prefix, self.name, self.max_depth
+        ));
+        fs::rename(&old_ttl, &new_ttl)?;
+        let old_log = self
+            .destination
+            .join(format!("{}-{}.log", self.current_prefix, self.name));
+        let new_log = self.destination.join(format!(
+            "{}-{}-max-depth-{:02}.log",
+            self.current_prefix, self.name, self.max_depth
+        ));
+        fs::rename(&old_log, &new_log)?;
+        Ok(())
     }
 }
 
@@ -132,11 +148,14 @@ impl io::Write for TripleWriter {
     }
 
     fn flush(&mut self) -> io::Result<()> {
+        let triple_count = self.triple_buffer.iter().filter(|&&b| b == b'\n').count();
         self.triple_writer.write_all(&self.triple_buffer)?;
         self.triple_writer.flush()?;
-        self.bytes_written += self.triple_buffer.len();
+        self.triples_written += triple_count;
         self.triple_buffer.clear();
-        if self.bytes_written >= self.max_ttl_file_size_in_bytes {
+        // NOTE: This means we overshoot chunk_size a little bit, but that's
+        // fine.
+        if self.triples_written >= self.chunk_size {
             self.rotate()?;
         }
         Ok(())
@@ -146,6 +165,7 @@ impl io::Write for TripleWriter {
 impl Drop for TripleWriter {
     fn drop(&mut self) {
         let _ = self.triple_writer.write_all(&self.triple_buffer);
-        let _ = self.write_max_depth_triple();
+        let _ = self.triple_writer.flush();
+        let _ = self.rename_with_depth();
     }
 }

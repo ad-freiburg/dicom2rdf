@@ -18,7 +18,8 @@ CMD /app/convert \
     --config /app/config.toml \
     --input-dir /input \
     --output-dir /ttl \
-    --max-ttl-file-size-in-mb $MAX_TTL_FILE_SIZE_IN_MB \
+    --chunk-size $CHUNK_SIZE \
+    --max-triples-per-file $MAX_TRIPLES_PER_FILE \
     --compression-level $COMPRESSION_LEVEL \
     ${NUM_THREADS:+--num-threads $NUM_THREADS}
 
