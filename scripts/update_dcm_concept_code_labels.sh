@@ -14,16 +14,12 @@ curl -s --disable-epsv "$DCM_OWL_ENDPOINT" |
 | select(
     ."skos:notation"."#text"
     and ."skos:prefLabel"."#text"
-    and ."skos:prefLabel"."@xml:lang"
     and ."skos:definition"."#text"
-    and ."skos:definition"."@xml:lang"
   )
 | {
     notation: ."skos:notation"."#text",
     label: ."skos:prefLabel"."#text",
-    labelLang: ."skos:prefLabel"."@xml:lang",
     definition: ."skos:definition"."#text",
-    definitionLang: ."skos:definition"."@xml:lang"
   }
-| "<https://dicom.nema.org/resources/ontology/DCM/\(.notation)> <http://www.w3.org/2000/01/rdf-schema#label> \(.label|@json)@\(.labelLang) .\n<https://dicom.nema.org/resources/ontology/DCM/\(.notation)> <http://www.w3.org/2000/01/rdf-schema#comment> \(.definition|@json)@\(.definitionLang) ."
+| "<https://dicom.nema.org/resources/ontology/DCM/\(.notation)> <http://www.w3.org/2000/01/rdf-schema#label> \(.label|@json) .\n<https://dicom.nema.org/resources/ontology/DCM/\(.notation)> <http://www.w3.org/2000/01/rdf-schema#comment> \(.definition|@json) ."
 ' | sort >>"$TARGET_FILE"
