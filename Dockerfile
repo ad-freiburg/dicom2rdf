@@ -49,4 +49,4 @@ FROM alpine:3 AS update-ttl-static
 RUN apk add --no-cache bash curl jq libxml2-utils py3-pip \
     && pip install --break-system-packages yq
 COPY scripts/update_*.sh /scripts/
-CMD ["bash", "-c", "/scripts/update_dcm_tag_labels.sh && /scripts/update_sop_class_uid_labels.sh"]
+CMD ["bash", "-c", "/scripts/update_dcm_tag_labels.sh && /scripts/update_dcm_concept_code_labels.sh && /scripts/update_sop_class_uid_labels.sh"]
