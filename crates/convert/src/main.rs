@@ -14,6 +14,7 @@ use log::{info, warn};
 use rayon::prelude::*;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 
 fn dir_exists(s: &str) -> Result<PathBuf, String> {
     let path = PathBuf::from(s);
@@ -54,6 +55,10 @@ struct Args {
     /// Number of rayon worker threads (default: whatever rayon defaults to)
     #[arg(long)]
     num_threads: Option<usize>,
+
+    /// Emit a single benchmark duration (ms) to stdout
+    #[arg(long, default_value_t = false)]
+    benchmark: bool,
 }
 
 
@@ -114,6 +119,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     let args = Args::parse();
 
+    let benchmark_start = if args.benchmark {
+        Some(Instant::now())
+    } else {
+        None
+    };
+
     if let Some(num_threads) = args.num_threads {
         rayon::ThreadPoolBuilder::new()
             .num_threads(num_threads)
@@ -156,6 +167,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.max_triples_per_file,
         args.compression_level,
     )?;
+
+    if let Some(start) = benchmark_start {
+        println!("{}", start.elapsed().as_millis());
+    }
 
     Ok(())
 }

@@ -23,6 +23,14 @@ CMD /app/convert \
     --compression-level $COMPRESSION_LEVEL \
     ${NUM_THREADS:+--num-threads $NUM_THREADS}
 
+FROM alpine:3 AS benchmark-convert
+ENV RUST_LOG=info
+COPY --from=builder /tmp/convert /app/
+COPY config.toml /app/
+COPY scripts/benchmark-convert.sh /scripts/benchmark-convert.sh
+RUN chmod +x /scripts/benchmark-convert.sh
+CMD ["/scripts/benchmark-convert.sh"]
+
 FROM docker.io/adfreiburg/qlever@sha256:04903551c4c8d27f8ba13e6e67906d30116e5b1ebf83f7716babbad61751b1b6 AS construct
 USER root
 RUN apt-get update && apt-get install -y jq && rm -rf /var/lib/apt/lists/*
